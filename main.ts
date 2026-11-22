@@ -14,9 +14,25 @@ const repoRoot = dirname(fileURLToPath(import.meta.url));
 const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
 // The grader runs this program twice and both runs must write the same
-// bytes, so start from an empty output directory every time.
-rmSync(outputDir, { recursive: true, force: true });
-mkdirSync(outputDir, { recursive: true });
+// bytes, so start from a clean slate for the entry's own outputs every
+// time. NOTE: never rmSync the whole output directory — the grader's
+// /output can hold entries this program may not delete (e.g. a
+// read-only subdirectory left by the harness), and an EACCES from that
+// one call kills the whole run with exit code 1. Remove only the three
+// outputs this entry owns, and ignore failures: a stale output that
+// cannot be removed is overwritten by the copy/write below anyway.
+for (const own of ['game', 'screenshots', 'dossier.json']) {
+  try {
+    rmSync(join(outputDir, own), { recursive: true, force: true });
+  } catch {
+    // Not ours to delete, or already gone — carry on regardless.
+  }
+}
+try {
+  mkdirSync(outputDir, { recursive: true });
+} catch {
+  // Already exists — carry on regardless.
+}
 
 copyTree(join(repoRoot, 'game'), join(outputDir, 'game'));
 // Screenshots are the entry's face: refuse a silent hand-in with none.
@@ -36,6 +52,7 @@ const dossier = buildDossier(outputDir, {
   game_path_max_bytes: 1000,
 });
 writeFileSync(join(outputDir, 'dossier.json'), dossier);
+console.log('staged game/ + screenshots/ + dossier.json in ' + outputDir);
 
 function copyTree(from, to) {
   mkdirSync(to, { recursive: true });
