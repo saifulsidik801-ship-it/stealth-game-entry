@@ -8,6 +8,7 @@
 // (cones, shadows, objectives) is never covered up.
 
 import { mulberry32 } from './world.js';
+import { BOUNDS, PLAY_W, PLAY_H } from './levels.js';
 
 const GOODS = ['fruit', 'fabric', 'pottery', 'lanterns', 'spice', 'bread'];
 
@@ -25,7 +26,7 @@ function distToSeg(px, py, x1, y1, x2, y2) {
 }
 
 function clearOf(x, y, r, level) {
-  for (const s of [...level.walls, ...level.stalls]) {
+  for (const s of [...level.walls, ...level.stalls, ...(level.obstacles || [])]) {
     const nx = Math.max(s.x, Math.min(x, s.x + s.w));
     const ny = Math.max(s.y, Math.min(y, s.y + s.h));
     if (Math.hypot(x - nx, y - ny) < r) return false;
@@ -50,7 +51,8 @@ function clearOf(x, y, r, level) {
       if (distToSeg(x, y, a[0], a[1], b[0], b[1]) < r + 26) return false;
     }
   }
-  return x > 26 && x < 1254 && y > 26 && y < 694;
+  return x > BOUNDS.x + 10 && x < BOUNDS.x + BOUNDS.w - 10 &&
+         y > BOUNDS.y + 10 && y < BOUNDS.y + BOUNDS.h - 10;
 }
 
 const decorCache = new Map();
@@ -61,8 +63,8 @@ export function decorFor(levelIndex, level) {
 
   // --- cobblestones: a full floor of varied rounded stones ---
   const stones = [];
-  for (let gy = 24; gy < 700; gy += 17) {
-    for (let gx = 24 + ((gy / 17) % 2) * 9; gx < 1256; gx += 18) {
+  for (let gy = 24; gy < PLAY_H - 20; gy += 17) {
+    for (let gx = 24 + ((gy / 17) % 2) * 9; gx < PLAY_W - 24; gx += 18) {
       const jx = gx + (rnd() - 0.5) * 5;
       const jy = gy + (rnd() - 0.5) * 5;
       stones.push({ x: jx, y: jy, rx: 7 + rnd() * 3, ry: 5 + rnd() * 2.5, v: rnd() });
@@ -78,8 +80,8 @@ export function decorFor(levelIndex, level) {
   ];
   for (let i = 0; i < 3; i++) {
     for (let tries = 0; tries < 40; tries++) {
-      const x = 60 + rnd() * 1050;
-      const y = 60 + rnd() * 540;
+      const x = 60 + rnd() * (PLAY_W - 250);
+      const y = 60 + rnd() * (PLAY_H - 180);
       const w = 110 + rnd() * 60;
       const h = 62 + rnd() * 26;
       if (clearOf(x + w / 2, y + h / 2, Math.max(w, h) / 2, level)) {
@@ -93,8 +95,8 @@ export function decorFor(levelIndex, level) {
   const puddles = [];
   for (let i = 0; i < 2; i++) {
     for (let tries = 0; tries < 40; tries++) {
-      const x = 80 + rnd() * 1050;
-      const y = 80 + rnd() * 520;
+      const x = 80 + rnd() * (PLAY_W - 260);
+      const y = 80 + rnd() * (PLAY_H - 200);
       if (clearOf(x, y, 52, level)) { puddles.push({ x, y, rx: 46 + rnd() * 22, ry: 15 + rnd() * 8 }); break; }
     }
   }
@@ -104,8 +106,8 @@ export function decorFor(levelIndex, level) {
   const props = [];
   for (let i = 0; i < 26; i++) {
     for (let tries = 0; tries < 30; tries++) {
-      const x = 40 + rnd() * 1200;
-      const y = 40 + rnd() * 640;
+      const x = 40 + rnd() * (PLAY_W - 80);
+      const y = 40 + rnd() * (PLAY_H - 80);
       const kind = kinds[i % kinds.length];
       const r = kind === 'cart' ? 46 : 22;
       if (clearOf(x, y, r, level)) {
@@ -119,13 +121,13 @@ export function decorFor(levelIndex, level) {
   const banners = [];
   const bannerHues = ['#a33327', '#2e6b7d', '#7a4a8a', '#b4552d', '#2e7d6b'];
   for (let i = 0; i < 4; i++) {
-    banners.push({ x: 150 + i * 300 + rnd() * 60, hue: bannerHues[i % bannerHues.length], len: 52 + rnd() * 22 });
+    banners.push({ x: 180 + i * ((PLAY_W - 360) / 3) + rnd() * 60, hue: bannerHues[i % bannerHues.length], len: 52 + rnd() * 22 });
   }
 
   // --- wall torches (left + right walls) ---
   const torches = [
-    { x: 16, y: 150, side: 1 }, { x: 16, y: 540, side: 1 },
-    { x: 1264, y: 220, side: -1 }, { x: 1264, y: 590, side: -1 },
+    { x: 16, y: 180, side: 1 }, { x: 16, y: 680, side: 1 },
+    { x: PLAY_W - 16, y: 300, side: -1 }, { x: PLAY_W - 16, y: 720, side: -1 },
   ];
 
   // --- shoppers: small cloaked figures wandering slow loops in open lanes ---
@@ -134,8 +136,8 @@ export function decorFor(levelIndex, level) {
   for (let i = 0; i < 5; i++) {
     const loop = [];
     for (let tries = 0; tries < 60 && loop.length < 4; tries++) {
-      const x = 70 + rnd() * 1140;
-      const y = 70 + rnd() * 580;
+      const x = 70 + rnd() * (PLAY_W - 140);
+      const y = 70 + rnd() * (PLAY_H - 140);
       if (clearOf(x, y, 26, level)) loop.push({ x, y });
     }
     if (loop.length >= 3) {
@@ -157,7 +159,7 @@ export function decorFor(levelIndex, level) {
   // --- dust motes + fireflies in the shadow zones ---
   const dust = [];
   for (let i = 0; i < 70; i++) {
-    dust.push({ x: 20 + rnd() * 1240, y: 20 + rnd() * 680, r: 0.8 + rnd() * 1.6, phase: rnd() * 12, drift: 3 + rnd() * 7 });
+    dust.push({ x: 20 + rnd() * (PLAY_W - 40), y: 20 + rnd() * (PLAY_H - 40), r: 0.8 + rnd() * 1.6, phase: rnd() * 12, drift: 3 + rnd() * 7 });
   }
   const fireflies = [];
   for (const s of level.shadows) {

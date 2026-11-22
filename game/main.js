@@ -44,7 +44,7 @@ const keys = { up: false, down: false, left: false, right: false, sneak: false, 
 function loadLevel(index) {
   game.levelIndex = index;
   game.level = JSON.parse(JSON.stringify(LEVELS[index]));
-  game.solids = [...game.level.walls, ...game.level.stalls];
+  game.solids = [...game.level.walls, ...game.level.stalls, ...(game.level.obstacles || [])];
   game.player = makePlayer(game.level.playerStart[0], game.level.playerStart[1], game.level.decoys);
   game.guards = game.level.guards.map(makeGuard);
   game.decoys = [];
@@ -237,20 +237,20 @@ window.addEventListener('keyup', (e) => {
   if (name) keys[name] = false;
 });
 
-let mouse = { x: 640, y: 360 };
+let mouse = { x: 800, y: 450 };
 canvas.addEventListener('mousemove', (e) => {
   const r = canvas.getBoundingClientRect();
   mouse = {
-    x: ((e.clientX - r.left) / r.width) * 1280,
-    y: ((e.clientY - r.top) / r.height) * 720,
+    x: ((e.clientX - r.left) / r.width) * canvas.width,
+    y: ((e.clientY - r.top) / r.height) * canvas.height,
   };
 });
 canvas.addEventListener('mousedown', (e) => {
   ensureAudio();
   const r = canvas.getBoundingClientRect();
   mouse = {
-    x: ((e.clientX - r.left) / r.width) * 1280,
-    y: ((e.clientY - r.top) / r.height) * 720,
+    x: ((e.clientX - r.left) / r.width) * canvas.width,
+    y: ((e.clientY - r.top) / r.height) * canvas.height,
   };
   if (game.screen === 'start') { game.screen = 'play'; return; }
   if (game.screen === 'levelclear') { nextLevel(); return; }

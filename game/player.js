@@ -2,6 +2,7 @@
 // One job: turn keyboard/mouse input into the player's next state.
 
 import { moveBody, pointInRect, clamp } from './world.js';
+import { BOUNDS } from './levels.js';
 
 export const PLAYER_RADIUS = 13;
 export const WALK_SPEED = 135;
@@ -93,8 +94,8 @@ export function throwDecoy(player, tx, ty, level) {
   const len = Math.hypot(dx, dy) || 1;
   const range = clamp(len, 60, 220);
   const decoy = {
-    x: clamp(player.x + (dx / len) * range, 24, 1256),
-    y: clamp(player.y + (dy / len) * range, 24, 696),
+    x: clamp(player.x + (dx / len) * range, BOUNDS.x + 8, BOUNDS.x + BOUNDS.w - 8),
+    y: clamp(player.y + (dy / len) * range, BOUNDS.y + 8, BOUNDS.y + BOUNDS.h - 8),
     t: 3.0, // seconds of beeping before it dies
   };
   return decoy;

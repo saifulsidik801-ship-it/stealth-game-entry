@@ -2,6 +2,10 @@
 // One job: put the live game into a photogenic mid-play moment.
 // These are real states of the real game code (the starter does the same
 // with shots.json); nothing here is drawn by hand or composited.
+// Coordinates are for the v3 playfield (1600x900): every staged position
+// was checked to sit in open floor, clear of stalls, obstacles, shadows
+// and the exit. Guard spots sit on their patrol lanes, never inside a
+// solid.
 
 // game: the live state object from main.js. name: 'cover' | 'suspicious' |
 // 'chase' | 'win'. Called once after a level is loaded.
@@ -10,12 +14,13 @@ export function applyShot(game, name) {
   game.screen = 'play';
   if (name === 'cover') {
     // Level 1, mid-infiltration: thief beside the central stall, two wardens
-    // sweeping with big cones, lantern + locked exit both in frame.
-    game.player.x = 560; game.player.y = 400;
+    // sweeping with big cones, lantern + locked exit both in frame. The wide
+    // room shows off the new obstacle cover (crate stack, low wall, cart).
+    game.player.x = 700; game.player.y = 500;
     game.player.facing = 0.5;
-    game.guards[0].x = 420; game.guards[0].y = 90; game.guards[0].facing = 0.6;
-    game.guards[1].x = 560; game.guards[1].y = 300; game.guards[1].facing = 1.9;
-    game.guards[2].x = 900; game.guards[2].y = 640; game.guards[2].facing = Math.PI;
+    game.guards[0].x = 520; game.guards[0].y = 110; game.guards[0].facing = 0.6;
+    game.guards[1].x = 700; game.guards[1].y = 300; game.guards[1].facing = 1.9;
+    game.guards[2].x = 1100; game.guards[2].y = 800; game.guards[2].facing = Math.PI;
     game.detection = 35;
     game.stealthPct = 100;
     game.statusLine = 'DECOY ACTIVE // INFILTRATING MARKET ROW';
@@ -24,13 +29,14 @@ export function applyShot(game, name) {
     game.clockText = '00:47';
   } else if (name === 'suspicious') {
     // Near-miss: a warden is "?" and walking to the last-seen spot while the
-    // thief crouches at the edge of a shadow zone, detection draining.
-    game.player.x = 180; game.player.y = 350;
+    // thief crouches inside a shadow zone, detection draining. A low wall
+    // and a crate stack stand between the thief and the open lane.
+    game.player.x = 180; game.player.y = 450;
     game.player.facing = 0;
     game.player.sneaking = true;
-    game.guards[1].x = 420; game.guards[1].y = 360; game.guards[1].facing = Math.PI;
+    game.guards[1].x = 520; game.guards[1].y = 450; game.guards[1].facing = Math.PI;
     game.guards[1].mode = 'investigate';
-    game.guards[1].target = { x: 240, y: 360 };
+    game.guards[1].target = { x: 240, y: 450 };
     game.detection = 62;
     game.stealthPct = 71;
     game.statusLine = 'SUSPICIOUS — WARDEN INVESTIGATING LAST SEEN SPOT';
@@ -41,12 +47,12 @@ export function applyShot(game, name) {
     // Level 3, alarmed: an elite warden is "!" and chasing, detection high,
     // thief sprinting for shadow. Shows the recovery window matters.
     game.loadLevel(2);
-    game.player.x = 700; game.player.y = 430;
+    game.player.x = 860; game.player.y = 540;
     game.player.facing = Math.PI;
-    game.guards[3].x = 680; game.guards[3].y = 300; game.guards[3].facing = 1.57;
+    game.guards[3].x = 820; game.guards[3].y = 380; game.guards[3].facing = 1.57;
     game.guards[3].mode = 'chase';
-    game.guards[0].x = 400; game.guards[0].y = 180; game.guards[0].facing = 0;
-    game.guards[1].x = 900; game.guards[1].y = 480; game.guards[1].facing = Math.PI;
+    game.guards[0].x = 480; game.guards[0].y = 220; game.guards[0].facing = 0;
+    game.guards[1].x = 1100; game.guards[1].y = 600; game.guards[1].facing = Math.PI;
     game.detection = 88;
     game.stealthPct = 58;
     game.statusLine = 'ALARMED — BREAK LINE OF SIGHT TO RECOVER';

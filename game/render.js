@@ -8,9 +8,7 @@
 
 import { conePolygon, band } from './guards.js';
 import { decorFor, goodsFor } from './decor.js';
-
-const W = 1280;
-const H = 720;
+import { PLAY_W as W, PLAY_H as H } from './levels.js';
 
 // --- the static floor: cobbles + rugs + puddle bases + brick walls,
 // painted once per level onto an offscreen canvas, then blitted. ---
@@ -81,23 +79,23 @@ function floorCanvas(levelIndex, level) {
 
   // border walls: dark brick
   g.fillStyle = '#1b2438';
-  g.fillRect(0, 0, W, 16); g.fillRect(0, 704, W, 16);
-  g.fillRect(0, 0, 16, H); g.fillRect(1264, 0, 16, H);
+  g.fillRect(0, 0, W, 16); g.fillRect(0, H - 16, W, 16);
+  g.fillRect(0, 0, 16, H); g.fillRect(W - 16, 0, 16, H);
   g.strokeStyle = 'rgba(0,0,0,0.5)';
   g.lineWidth = 1;
   for (let x = 0; x < W; x += 32) {
     g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 16); g.stroke();
-    g.beginPath(); g.moveTo(x, 704); g.lineTo(x, 720); g.stroke();
+    g.beginPath(); g.moveTo(x, H - 16); g.lineTo(x, H); g.stroke();
   }
   for (let y = 0; y < H; y += 32) {
     g.beginPath(); g.moveTo(0, y); g.lineTo(16, y); g.stroke();
-    g.beginPath(); g.moveTo(1264, y); g.lineTo(1280, y); g.stroke();
+    g.beginPath(); g.moveTo(W - 16, y); g.lineTo(W, y); g.stroke();
   }
   g.strokeStyle = 'rgba(255,220,150,0.14)';
-  g.beginPath(); g.moveTo(16, 16); g.lineTo(1264, 16); g.stroke();
-  g.beginPath(); g.moveTo(16, 704); g.lineTo(1264, 704); g.stroke();
-  g.beginPath(); g.moveTo(16, 16); g.lineTo(16, 704); g.stroke();
-  g.beginPath(); g.moveTo(1264, 16); g.lineTo(1264, 704); g.stroke();
+  g.beginPath(); g.moveTo(16, 16); g.lineTo(W - 16, 16); g.stroke();
+  g.beginPath(); g.moveTo(16, H - 16); g.lineTo(W - 16, H - 16); g.stroke();
+  g.beginPath(); g.moveTo(16, 16); g.lineTo(16, H - 16); g.stroke();
+  g.beginPath(); g.moveTo(W - 16, 16); g.lineTo(W - 16, H - 16); g.stroke();
 
   floorCache.set(levelIndex, c);
   return c;
@@ -283,6 +281,130 @@ function drawProp(ctx, p, time) {
   ctx.restore();
 }
 
+function drawObstacle(ctx, o, time) {
+  // A soft ground shadow so the obstacle reads as solid and tall.
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(o.x + o.w / 2 + 3, o.y + o.h - 2, o.w / 2, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (o.type === 'crates') {
+    // Stacked wooden crates: big base crate + a smaller one on top.
+    ctx.fillStyle = '#6b4a26';
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+    ctx.strokeStyle = '#3d2a14';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(o.x + 1, o.y + 1, o.w - 2, o.h - 2);
+    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + o.w, o.y + o.h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(o.x + o.w, o.y); ctx.lineTo(o.x, o.y + o.h); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1;
+    for (let yy = o.y + o.h / 3; yy < o.y + o.h; yy += o.h / 3) {
+      ctx.beginPath(); ctx.moveTo(o.x, yy); ctx.lineTo(o.x + o.w, yy); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,220,150,0.12)';
+    ctx.fillRect(o.x, o.y, o.w, 7);
+    const s2 = Math.min(34, o.w * 0.55);
+    ctx.fillStyle = '#7a5530';
+    ctx.fillRect(o.x + o.w - s2 - 6, o.y - s2 + 10, s2, s2);
+    ctx.strokeStyle = '#3d2a14';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(o.x + o.w - s2 - 6, o.y - s2 + 10, s2, s2);
+    ctx.beginPath();
+    ctx.moveTo(o.x + o.w - s2 - 6, o.y - s2 + 10);
+    ctx.lineTo(o.x + o.w - 6, o.y + 10);
+    ctx.stroke();
+  } else if (o.type === 'wall') {
+    // Low stone wall: grey-blue bricks in offset courses, pale cap.
+    ctx.fillStyle = '#3a4358';
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 1;
+    const rows = o.h >= 100 ? 5 : 2;
+    for (let r = 0; r < rows; r++) {
+      const yy = o.y + (r * o.h) / rows;
+      ctx.beginPath(); ctx.moveTo(o.x, yy); ctx.lineTo(o.x + o.w, yy); ctx.stroke();
+      const off = (r % 2) * 16;
+      for (let xx = o.x + off; xx < o.x + o.w; xx += 32) {
+        ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx, Math.min(yy + o.h / rows, o.y + o.h)); ctx.stroke();
+      }
+    }
+    ctx.fillStyle = '#5a6a8a';
+    ctx.fillRect(o.x, o.y, o.w, 5);
+    ctx.fillStyle = 'rgba(255,230,180,0.10)';
+    ctx.fillRect(o.x, o.y + 5, o.w, 4);
+  } else if (o.type === 'fence') {
+    // Rope barrier: two posts + two sagging ropes.
+    const horizontal = o.w >= o.h;
+    ctx.strokeStyle = '#4a3220';
+    ctx.lineWidth = 5;
+    if (horizontal) {
+      for (const px of [o.x + 4, o.x + o.w - 4]) {
+        ctx.beginPath(); ctx.moveTo(px, o.y + 2); ctx.lineTo(px, o.y + o.h - 2); ctx.stroke();
+      }
+      ctx.strokeStyle = '#c9a24f';
+      ctx.lineWidth = 2.5;
+      for (const ry of [o.y + 8, o.y + o.h - 8]) {
+        ctx.beginPath();
+        ctx.moveTo(o.x + 4, ry);
+        ctx.quadraticCurveTo(o.x + o.w / 2, ry + 7, o.x + o.w - 4, ry);
+        ctx.stroke();
+      }
+    } else {
+      for (const py of [o.y + 4, o.y + o.h - 4]) {
+        ctx.beginPath(); ctx.moveTo(o.x + 2, py); ctx.lineTo(o.x + o.w - 2, py); ctx.stroke();
+      }
+      ctx.strokeStyle = '#c9a24f';
+      ctx.lineWidth = 2.5;
+      for (const rx of [o.x + 8, o.x + o.w - 8]) {
+        ctx.beginPath();
+        ctx.moveTo(rx, o.y + 4);
+        ctx.quadraticCurveTo(rx + 7, o.y + o.h / 2, rx, o.y + o.h - 4);
+        ctx.stroke();
+      }
+    }
+  } else if (o.type === 'cart') {
+    // Market cart: wooden bed, slatted sides, big spoked wheels, goods.
+    ctx.fillStyle = '#6b4a26';
+    ctx.fillRect(o.x, o.y + 8, o.w, o.h - 18);
+    ctx.strokeStyle = '#3d2a14';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(o.x, o.y + 8, o.w, o.h - 18);
+    ctx.fillStyle = '#7a5230';
+    ctx.fillRect(o.x + 4, o.y, o.w - 8, 10);
+    ctx.fillStyle = '#c94f3a';
+    ctx.beginPath(); ctx.arc(o.x + o.w * 0.3, o.y - 2, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8fbf3f';
+    ctx.beginPath(); ctx.arc(o.x + o.w * 0.6, o.y - 2, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffb347';
+    ctx.beginPath(); ctx.arc(o.x + o.w * 0.8, o.y - 2, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#2e1c0c';
+    ctx.lineWidth = 2;
+    for (const wx of [o.x + 14, o.x + o.w - 14]) {
+      ctx.beginPath(); ctx.arc(wx, o.y + o.h - 8, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(wx - 8, o.y + o.h - 8); ctx.lineTo(wx + 8, o.y + o.h - 8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(wx, o.y + o.h - 16); ctx.lineTo(wx, o.y + o.h); ctx.stroke();
+    }
+  } else { // sacks
+    const cols = ['#a88f68', '#8a7350', '#b59a72'];
+    const spots = [[0.3, 0.62], [0.62, 0.68], [0.46, 0.38]];
+    spots.forEach(([fx, fy], i) => {
+      const sx = o.x + o.w * fx;
+      const sy = o.y + o.h * fy;
+      ctx.fillStyle = cols[i % cols.length];
+      ctx.beginPath(); ctx.ellipse(sx, sy, o.w * 0.26, o.h * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#8a7350';
+      ctx.beginPath(); ctx.moveTo(sx - 6, sy - o.h * 0.26); ctx.lineTo(sx + 6, sy - o.h * 0.26); ctx.lineTo(sx + 2, sy - o.h * 0.38); ctx.lineTo(sx - 2, sy - o.h * 0.38); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(60,40,15,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sx - o.w * 0.2, sy - o.h * 0.22); ctx.lineTo(sx + o.w * 0.2, sy - o.h * 0.22); ctx.stroke();
+    });
+  }
+  // thin bright rim so the obstacle reads as cover, not floor
+  ctx.strokeStyle = 'rgba(255,220,150,0.18)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(o.x + 0.5, o.y + 0.5, o.w - 1, o.h - 1);
+}
+
 export function drawScene(ctx, game, time) {
   const level = game.level;
   const player = game.player;
@@ -457,6 +579,10 @@ export function drawScene(ctx, game, time) {
     ctx.textAlign = 'center';
     ctx.fillText(GOODS_LABEL[goods], s.x + s.w / 2, s.y + s.h - 4);
   });
+
+  // --- obstacles: solid cover that blocks movement AND vision ---
+  // Drawn in the same HD style as the stalls: wood, stone, rope, canvas.
+  for (const o of level.obstacles || []) drawObstacle(ctx, o, time);
 
   // --- props: crates, barrels, baskets, sacks, carts ---
   for (const p of decor.props) drawProp(ctx, p, time);
@@ -695,7 +821,7 @@ export function drawScene(ctx, game, time) {
   }
   for (const d of decor.dust) {
     const dx = d.x + Math.sin(time * 0.12 + d.phase) * d.drift;
-    const dy = 20 + ((d.y + time * 2) % 680);
+    const dy = 20 + ((d.y + time * 2) % (H - 40));
     ctx.fillStyle = `rgba(220,200,160,${0.10 + 0.08 * Math.sin(time + d.phase)})`;
     ctx.beginPath(); ctx.arc(dx, dy, d.r, 0, Math.PI * 2); ctx.fill();
   }
@@ -711,7 +837,7 @@ export function drawScene(ctx, game, time) {
   }
 
   // --- vignette: the market edges fall into night ---
-  const vg = ctx.createRadialGradient(640, 360, 300, 640, 360, 760);
+  const vg = ctx.createRadialGradient(W / 2, H / 2, 380, W / 2, H / 2, 950);
   vg.addColorStop(0, 'rgba(0,0,0,0)');
   vg.addColorStop(1, 'rgba(0,0,0,0.38)');
   ctx.fillStyle = vg;
@@ -742,52 +868,52 @@ function drawHud(ctx, game, time) {
   ctx.fillStyle = '#ffd98a';
   ctx.font = 'bold 13px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(`${level.name}   ·   LANTERNS ${hacked}/${level.lanterns.length}   ·   EXIT ${exitOpen ? 'OPEN' : 'LOCKED'}`, 640, 23);
-  // lantern pips
+  ctx.fillText(`${level.name}   ·   LANTERNS ${hacked}/${level.lanterns.length}   ·   EXIT ${exitOpen ? 'OPEN' : 'LOCKED'}`, W / 2, 23);
+  // lantern pips (right of the centered level line, clear of its text)
   for (let i = 0; i < level.lanterns.length; i++) {
-    const px = 872 + i * 18;
+    const px = 1060 + i * 18;
     ctx.fillStyle = i < hacked ? '#37d67a' : '#8a6a2a';
     ctx.beginPath(); ctx.ellipse(px, 19, 4, 5.5, 0, 0, Math.PI * 2); ctx.fill();
   }
   ctx.textAlign = 'right';
   const detColor = b === 0 ? '#37d67a' : b === 1 ? '#ffd24d' : '#ff5a2a';
   ctx.fillStyle = detColor;
-  ctx.fillText(`DETECTION ${Math.round(game.detection)}%`, 1000, 23);
+  ctx.fillText(`DETECTION ${Math.round(game.detection)}%`, 1230, 23);
   ctx.fillStyle = 'rgba(255,255,255,0.22)';
-  roundRect(ctx, 1010, 13, 110, 10, 4); ctx.fill();
-  const dg = ctx.createLinearGradient(1010, 0, 1120, 0);
+  roundRect(ctx, 1240, 13, 110, 10, 4); ctx.fill();
+  const dg = ctx.createLinearGradient(1240, 0, 1350, 0);
   dg.addColorStop(0, '#37d67a');
   dg.addColorStop(0.5, '#ffd24d');
   dg.addColorStop(1, '#ff5a2a');
   ctx.fillStyle = dg;
   if (game.detection > 0) {
-    roundRect(ctx, 1010, 13, Math.max(6, 110 * (game.detection / 100)), 10, 4); ctx.fill();
+    roundRect(ctx, 1240, 13, Math.max(6, 110 * (game.detection / 100)), 10, 4); ctx.fill();
   }
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.fillRect(1010 + 44, 11, 1, 14);
-  ctx.fillRect(1010 + 82, 11, 1, 14);
+  ctx.fillRect(1240 + 44, 11, 1, 14);
+  ctx.fillRect(1240 + 82, 11, 1, 14);
   ctx.fillStyle = '#9fd8ff';
-  ctx.fillText(`STEALTH ${Math.round(game.stealthPct)}%`, 1266, 23);
+  ctx.fillText(`STEALTH ${Math.round(game.stealthPct)}%`, W - 14, 23);
 
   // bottom bar: controls + legend + status + win/lose
   ctx.fillStyle = 'rgba(6,10,20,0.94)';
-  ctx.fillRect(0, 684, W, 36);
+  ctx.fillRect(0, H - 36, W, 36);
   ctx.fillStyle = gold;
-  ctx.fillRect(0, 684, W, 1.5);
+  ctx.fillRect(0, H - 36, W, 1.5);
   ctx.fillStyle = '#c8d6ee';
   ctx.font = '12px monospace';
   ctx.textAlign = 'left';
-  ctx.fillText('[WASD] MOVE   [SHIFT] SNEAK (SILENT)   [E] HACK (HOLD)   [SPACE / CLICK] DECOY (' + game.player.decoysLeft + ' LEFT)', 14, 700);
+  ctx.fillText('[WASD] MOVE   [SHIFT] SNEAK (SILENT)   [E] HACK (HOLD)   [SPACE / CLICK] DECOY (' + game.player.decoysLeft + ' LEFT)', 14, H - 20);
   ctx.fillStyle = '#7d8aa5';
   ctx.font = '11px monospace';
-  ctx.fillText('● cone = spotted   ▒ shadow = safe   ·   WIN: hack every lantern, reach the gate unseen   ·   LOSE: detection reaches 100%', 14, 715);
+  ctx.fillText('● cone = spotted   ▒ shadow = safe   ·   WIN: hack every lantern, reach the gate unseen   ·   LOSE: detection reaches 100%', 14, H - 5);
   ctx.fillStyle = b === 0 ? '#37d67a' : b === 1 ? '#ffd24d' : '#ff5a2a';
   ctx.font = 'bold 12px monospace';
   ctx.textAlign = 'right';
-  ctx.fillText('STATUS: ' + game.statusLine, 1266, 700);
+  ctx.fillText('STATUS: ' + game.statusLine, W - 14, H - 20);
   ctx.fillStyle = '#9fd8ff';
   ctx.font = '12px monospace';
-  ctx.fillText(`TIME ${game.clockText}   ·   LEVEL ${game.levelIndex + 1}/3`, 1266, 715);
+  ctx.fillText(`TIME ${game.clockText}   ·   LEVEL ${game.levelIndex + 1}/3`, W - 14, H - 5);
 }
 
 export function drawOverlay(ctx, game) {
@@ -804,7 +930,7 @@ export function drawOverlay(ctx, game) {
   ctx.strokeRect(56, 56, W - 112, H - 112);
   // little lanterns along the top frame
   for (let i = 0; i < 7; i++) {
-    const lx = 200 + i * 140;
+    const lx = 240 + i * ((W - 480) / 6);
     ctx.fillStyle = 'rgba(255,190,80,0.9)';
     ctx.beginPath(); ctx.ellipse(lx, 56, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#8a5a1a';
@@ -815,59 +941,59 @@ export function drawOverlay(ctx, game) {
   if (screen === 'start') {
     ctx.fillStyle = '#ffb347';
     ctx.font = 'bold 54px monospace';
-    ctx.fillText('EMBER MARKET', 640, 190);
+    ctx.fillText('EMBER MARKET', W / 2, 190);
     ctx.fillStyle = '#35d0c5';
     ctx.font = 'bold 26px monospace';
-    ctx.fillText('— LANTERN THIEF —', 640, 232);
+    ctx.fillText('— LANTERN THIEF —', W / 2, 232);
     ctx.fillStyle = '#e8eefc';
     ctx.font = '16px monospace';
-    ctx.fillText('Sneak through the night market. Hack the ember lanterns. Reach the gate unseen.', 640, 290);
+    ctx.fillText('Sneak through the night market. Hack the ember lanterns. Reach the gate unseen.', W / 2, 290);
     ctx.fillStyle = '#c8d6ee';
     ctx.font = '15px monospace';
-    ctx.fillText('WASD move · SHIFT sneak (slow + silent) · hold E to hack · SPACE / click throws a decoy', 640, 330);
-    ctx.fillText('Hide in SHADOW COVER — lantern light and running get you spotted.', 640, 358);
-    ctx.fillText('A "?" means a warden is suspicious. A "!" means run — or break line of sight.', 640, 386);
+    ctx.fillText('WASD move · SHIFT sneak (slow + silent) · hold E to hack · SPACE / click throws a decoy', W / 2, 330);
+    ctx.fillText('Hide in SHADOW COVER — lantern light and running get you spotted.', W / 2, 358);
+    ctx.fillText('A "?" means a warden is suspicious. A "!" means run — or break line of sight.', W / 2, 386);
     ctx.fillStyle = '#37d67a';
     ctx.font = 'bold 15px monospace';
-    ctx.fillText('WIN: hack every lantern, reach the gate unseen', 640, 440);
+    ctx.fillText('WIN: hack every lantern, reach the gate unseen', W / 2, 440);
     ctx.fillStyle = '#ff7a7a';
-    ctx.fillText('LOSE: detection reaches 100% and a warden catches you', 640, 466);
+    ctx.fillText('LOSE: detection reaches 100% and a warden catches you', W / 2, 466);
     ctx.fillStyle = '#ffd24d';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText('[ CLICK OR PRESS SPACE TO BEGIN ]', 640, 530);
+    ctx.fillText('[ CLICK OR PRESS SPACE TO BEGIN ]', W / 2, 530);
   } else if (screen === 'levelclear') {
     ctx.fillStyle = '#37d67a';
     ctx.font = 'bold 40px monospace';
-    ctx.fillText('LANTERNS SECURED', 640, 280);
+    ctx.fillText('LANTERNS SECURED', W / 2, 280);
     ctx.fillStyle = '#e8eefc';
     ctx.font = '18px monospace';
-    ctx.fillText(`${game.level.name} — cleared in ${game.clockText} · stealth ${Math.round(game.stealthPct)}%`, 640, 330);
+    ctx.fillText(`${game.level.name} — cleared in ${game.clockText} · stealth ${Math.round(game.stealthPct)}%`, W / 2, 330);
     ctx.fillStyle = '#ffd24d';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText('[ PRESS SPACE FOR THE NEXT LEVEL ]', 640, 400);
+    ctx.fillText('[ PRESS SPACE FOR THE NEXT LEVEL ]', W / 2, 400);
   } else if (screen === 'win') {
     ctx.fillStyle = '#ffb347';
     ctx.font = 'bold 44px monospace';
-    ctx.fillText('THE MARKET IS YOURS', 640, 260);
+    ctx.fillText('THE MARKET IS YOURS', W / 2, 260);
     ctx.fillStyle = '#35d0c5';
     ctx.font = 'bold 22px monospace';
-    ctx.fillText('ALL THREE LANTERNS HACKED — YOU WERE NEVER CAUGHT', 640, 304);
+    ctx.fillText('ALL THREE LANTERNS HACKED — YOU WERE NEVER CAUGHT', W / 2, 304);
     ctx.fillStyle = '#e8eefc';
     ctx.font = '18px monospace';
-    ctx.fillText(`Total time ${game.totalClockText} · stealth ${Math.round(game.totalStealthPct)}% · spotted ${game.timesSpotted} times`, 640, 360);
+    ctx.fillText(`Total time ${game.totalClockText} · stealth ${Math.round(game.totalStealthPct)}% · spotted ${game.timesSpotted} times`, W / 2, 360);
     ctx.fillStyle = '#ffd24d';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText('[ PRESS R TO PLAY AGAIN ]', 640, 430);
+    ctx.fillText('[ PRESS R TO PLAY AGAIN ]', W / 2, 430);
   } else if (screen === 'lose') {
     ctx.fillStyle = '#ff5a2a';
     ctx.font = 'bold 44px monospace';
-    ctx.fillText('CAUGHT!', 640, 280);
+    ctx.fillText('CAUGHT!', W / 2, 280);
     ctx.fillStyle = '#e8eefc';
     ctx.font = '18px monospace';
-    ctx.fillText('A warden found you in the lantern light. The market keeps its secrets.', 640, 330);
-    ctx.fillText(`${game.level.name} · detection hit 100%`, 640, 360);
+    ctx.fillText('A warden found you in the lantern light. The market keeps its secrets.', W / 2, 330);
+    ctx.fillText(`${game.level.name} · detection hit 100%`, W / 2, 360);
     ctx.fillStyle = '#ffd24d';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText('[ PRESS R TO TRY AGAIN ]', 640, 430);
+    ctx.fillText('[ PRESS R TO TRY AGAIN ]', W / 2, 430);
   }
 }
