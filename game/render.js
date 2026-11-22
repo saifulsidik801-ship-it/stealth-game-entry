@@ -24,20 +24,35 @@ function floorCanvas(levelIndex, level) {
   g.fillStyle = '#0c1220';
   g.fillRect(0, 0, W, H);
 
-  // cobblestones: varied warm-dark stones with dark grout between
+  // cobblestones: LARGE, dark, low-contrast stones — a calm floor that
+  // stops fighting the gameplay. The value range is narrow and dark, so
+  // cones, lanterns and the thief pop against it.
   for (const s of decor.stones) {
     const v = s.v;
-    const r = Math.floor(26 + v * 14);
-    const gg = Math.floor(30 + v * 16);
-    const b = Math.floor(48 + v * 22);
+    const r = Math.floor(18 + v * 8);
+    const gg = Math.floor(22 + v * 10);
+    const b = Math.floor(34 + v * 14);
     g.fillStyle = `rgb(${r},${gg},${b})`;
     g.beginPath();
-    g.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2);
+    g.ellipse(s.x, s.y, s.rx * 1.5, s.ry * 1.5, 0, 0, Math.PI * 2);
     g.fill();
-    g.fillStyle = 'rgba(255,220,160,0.05)';
+    g.fillStyle = 'rgba(255,220,160,0.03)';
     g.beginPath();
-    g.ellipse(s.x - 1.5, s.y - 1.5, s.rx * 0.55, s.ry * 0.45, 0, 0, Math.PI * 2);
+    g.ellipse(s.x - 2, s.y - 2, s.rx * 0.8, s.ry * 0.6, 0, 0, Math.PI * 2);
     g.fill();
+  }
+
+  // a unifying night wash over the stones, then faint large-tile seams
+  // so the floor reads as big calm slabs, not static noise
+  g.fillStyle = 'rgba(8,12,24,0.42)';
+  g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,220,160,0.035)';
+  g.lineWidth = 1;
+  for (let x = 200; x < W; x += 200) {
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
+  }
+  for (let y = 200; y < H; y += 200) {
+    g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
   }
 
   // patterned rugs
@@ -77,29 +92,57 @@ function floorCanvas(levelIndex, level) {
     g.beginPath(); g.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, Math.PI * 2); g.stroke();
   }
 
-  // border walls: dark brick
-  g.fillStyle = '#1b2438';
+  // border walls: deep brick with raised courses, a lit inner edge and
+  // a shadow falling into the floor — the walls read as tall, not flat
+  g.fillStyle = '#161d2e';
   g.fillRect(0, 0, W, 16); g.fillRect(0, H - 16, W, 16);
   g.fillRect(0, 0, 16, H); g.fillRect(W - 16, 0, 16, H);
-  g.strokeStyle = 'rgba(0,0,0,0.5)';
+  // brick courses: horizontal joints every 8px, vertical joints offset
+  g.strokeStyle = 'rgba(0,0,0,0.55)';
   g.lineWidth = 1;
+  for (let y = 8; y < 16; y += 8) {
+    g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+    g.beginPath(); g.moveTo(0, H - y); g.lineTo(W, H - y); g.stroke();
+  }
   for (let x = 0; x < W; x += 32) {
-    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 16); g.stroke();
-    g.beginPath(); g.moveTo(x, H - 16); g.lineTo(x, H); g.stroke();
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 8); g.stroke();
+    g.beginPath(); g.moveTo(x + 16, 8); g.lineTo(x + 16, 16); g.stroke();
+    g.beginPath(); g.moveTo(x, H - 16); g.lineTo(x, H - 8); g.stroke();
+    g.beginPath(); g.moveTo(x + 16, H - 8); g.lineTo(x + 16, H); g.stroke();
   }
   for (let y = 0; y < H; y += 32) {
-    g.beginPath(); g.moveTo(0, y); g.lineTo(16, y); g.stroke();
-    g.beginPath(); g.moveTo(W - 16, y); g.lineTo(W, y); g.stroke();
+    g.beginPath(); g.moveTo(0, y); g.lineTo(8, y); g.stroke();
+    g.beginPath(); g.moveTo(8, y + 16); g.lineTo(16, y + 16); g.stroke();
+    g.beginPath(); g.moveTo(W - 16, y); g.lineTo(W - 8, y); g.stroke();
+    g.beginPath(); g.moveTo(W - 8, y + 16); g.lineTo(W, y + 16); g.stroke();
   }
-  g.strokeStyle = 'rgba(255,220,150,0.14)';
-  g.beginPath(); g.moveTo(16, 16); g.lineTo(W - 16, 16); g.stroke();
-  g.beginPath(); g.moveTo(16, H - 16); g.lineTo(W - 16, H - 16); g.stroke();
-  g.beginPath(); g.moveTo(16, 16); g.lineTo(16, H - 16); g.stroke();
-  g.beginPath(); g.moveTo(W - 16, 16); g.lineTo(W - 16, H - 16); g.stroke();
+  // raised inner edge: warm highlight on the wall's lip
+  g.strokeStyle = 'rgba(255,220,150,0.28)';
+  g.lineWidth = 2;
+  g.beginPath(); g.moveTo(16, 17); g.lineTo(W - 16, 17); g.stroke();
+  g.beginPath(); g.moveTo(16, H - 17); g.lineTo(W - 16, H - 17); g.stroke();
+  g.beginPath(); g.moveTo(17, 16); g.lineTo(17, H - 16); g.stroke();
+  g.beginPath(); g.moveTo(W - 17, 16); g.lineTo(W - 17, H - 16); g.stroke();
+  // inner shadow falling from the wall onto the floor
+  const shT = g.createLinearGradient(0, 16, 0, 34);
+  shT.addColorStop(0, 'rgba(0,0,0,0.5)'); shT.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = shT; g.fillRect(16, 16, W - 32, 18);
+  const shB = g.createLinearGradient(0, H - 16, 0, H - 34);
+  shB.addColorStop(0, 'rgba(0,0,0,0.5)'); shB.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = shB; g.fillRect(16, H - 34, W - 32, 18);
+  const shL = g.createLinearGradient(16, 0, 34, 0);
+  shL.addColorStop(0, 'rgba(0,0,0,0.5)'); shL.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = shL; g.fillRect(16, 16, 18, H - 32);
+  const shR = g.createLinearGradient(W - 16, 0, W - 34, 0);
+  shR.addColorStop(0, 'rgba(0,0,0,0.5)'); shR.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = shR; g.fillRect(W - 34, 16, 18, H - 32);
 
   floorCache.set(levelIndex, c);
   return c;
 }
+
+// --- the light canvas for the night lighting pass (one per page) ---
+let lightCanvas = null;
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -142,9 +185,9 @@ function drawGoods(ctx, type, x, y, w, h, time) {
   const cy = y + h * 0.62;
   if (type === 'fruit') {
     const cols = ['#ff7a2a', '#e33d2e', '#8fbf3f', '#ffb347'];
-    for (let i = 0; i < 9; i++) {
-      const fx = x + 10 + (i % 5) * ((w - 20) / 4);
-      const fy = cy - Math.floor(i / 5) * 11 + 8;
+    for (let i = 0; i < 14; i++) {
+      const fx = x + 8 + (i % 7) * ((w - 16) / 6);
+      const fy = cy - Math.floor(i / 7) * 11 + 8;
       ctx.fillStyle = cols[i % cols.length];
       ctx.beginPath(); ctx.arc(fx, fy, 6, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
@@ -152,18 +195,18 @@ function drawGoods(ctx, type, x, y, w, h, time) {
     }
   } else if (type === 'fabric') {
     const cols = ['#c94f6d', '#4f8ac9', '#c9a24f', '#7d4fc9'];
-    for (let i = 0; i < 4; i++) {
-      const bx = x + 8 + i * ((w - 16) / 4);
+    for (let i = 0; i < 6; i++) {
+      const bx = x + 6 + i * ((w - 12) / 6);
       ctx.fillStyle = cols[i % cols.length];
-      roundRect(ctx, bx, cy - 16, (w - 16) / 4 - 4, 22, 3);
+      roundRect(ctx, bx, cy - 16, (w - 12) / 6 - 3, 22, 3);
       ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.fillRect(bx + 2, cy - 13, (w - 16) / 4 - 8, 3);
+      ctx.fillRect(bx + 2, cy - 13, (w - 12) / 6 - 7, 3);
     }
   } else if (type === 'pottery') {
-    const cols = ['#b5673a', '#7d6b4f', '#9a4a3a'];
-    for (let i = 0; i < 3; i++) {
-      const jx = x + w * (0.22 + i * 0.28);
+    const cols = ['#b5673a', '#7d6b4f', '#9a4a3a', '#c98a5a'];
+    for (let i = 0; i < 4; i++) {
+      const jx = x + w * (0.16 + i * 0.23);
       ctx.fillStyle = cols[i % cols.length];
       ctx.beginPath(); ctx.ellipse(jx, cy, 10, 13, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillRect(jx - 4, cy - 19, 8, 8);
@@ -171,8 +214,8 @@ function drawGoods(ctx, type, x, y, w, h, time) {
       ctx.beginPath(); ctx.ellipse(jx - 3, cy - 4, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
     }
   } else if (type === 'lanterns') {
-    for (let i = 0; i < 3; i++) {
-      const lx = x + w * (0.22 + i * 0.28);
+    for (let i = 0; i < 4; i++) {
+      const lx = x + w * (0.16 + i * 0.23);
       const flick = 0.8 + 0.2 * Math.sin(time * 5 + i * 2.1);
       const g = ctx.createRadialGradient(lx, cy - 6, 2, lx, cy - 6, 22);
       g.addColorStop(0, `rgba(255,190,90,${0.5 * flick})`);
@@ -187,8 +230,8 @@ function drawGoods(ctx, type, x, y, w, h, time) {
     }
   } else if (type === 'spice') {
     const cols = ['#d43d1a', '#e8a91c', '#7d9a1a', '#a34a7d'];
-    for (let i = 0; i < 4; i++) {
-      const sx = x + 10 + i * ((w - 20) / 4);
+    for (let i = 0; i < 6; i++) {
+      const sx = x + 8 + i * ((w - 16) / 6);
       ctx.fillStyle = cols[i % cols.length];
       ctx.beginPath();
       ctx.moveTo(sx - 8, cy + 8); ctx.lineTo(sx, cy - 10); ctx.lineTo(sx + 8, cy + 8);
@@ -198,8 +241,8 @@ function drawGoods(ctx, type, x, y, w, h, time) {
     }
   } else { // bread
     const cols = ['#c98a3a', '#a86a2a', '#d9a85a'];
-    for (let i = 0; i < 4; i++) {
-      const bx = x + 12 + i * ((w - 24) / 4);
+    for (let i = 0; i < 6; i++) {
+      const bx = x + 8 + i * ((w - 16) / 6);
       ctx.fillStyle = cols[i % cols.length];
       ctx.beginPath(); ctx.ellipse(bx, cy, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(90,50,10,0.6)';
@@ -250,6 +293,63 @@ function drawProp(ctx, p, time) {
     ctx.beginPath(); ctx.arc(-4, -8, 3.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#8fbf3f';
     ctx.beginPath(); ctx.arc(4, -8, 3.5, 0, Math.PI * 2); ctx.fill();
+  } else if (p.kind === 'plant') {
+    // potted plant: terracotta pot + green leaves (local coords, 0,0 = centre)
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.ellipse(0, 10, 11, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#a8542a';
+    ctx.beginPath(); ctx.moveTo(-9, -2); ctx.lineTo(9, -2); ctx.lineTo(6, 11); ctx.lineTo(-6, 11); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#3d7a34';
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i - 2) * 0.42;
+      ctx.beginPath();
+      ctx.ellipse(Math.cos(a) * 8, -2 + Math.sin(a) * 9, 3.5, 9, a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#5da347';
+    ctx.beginPath(); ctx.ellipse(-3, -11, 3, 7, -0.4, 0, Math.PI * 2); ctx.fill();
+  } else if (p.kind === 'grass') {
+    // tall grass tuft: thin blades, soft and low
+    ctx.strokeStyle = '#4a7a3a';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 7; i++) {
+      const bx = -9 + i * 3;
+      const lean = (i - 3) * 1.4;
+      ctx.beginPath();
+      ctx.moveTo(bx, 8);
+      ctx.quadraticCurveTo(bx + lean, -2, bx + lean * 1.8, -10 - (i % 3) * 3);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#6a9a4a';
+    ctx.beginPath(); ctx.moveTo(-4, 8); ctx.quadraticCurveTo(-2, -2, -6, -13); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4, 8); ctx.quadraticCurveTo(3, -2, 8, -12); ctx.stroke();
+  } else if (p.kind === 'vase') {
+    // tall ceramic vase, glazed blue
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.ellipse(0, 12, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2e5d7d';
+    ctx.beginPath();
+    ctx.moveTo(-5, -12); ctx.lineTo(5, -12); ctx.lineTo(3, -6);
+    ctx.quadraticCurveTo(9, 2, 6, 10);
+    ctx.lineTo(-6, 10); ctx.quadraticCurveTo(-9, 2, -3, -6);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.fillRect(-5, -8, 2.5, 14);
+    ctx.fillStyle = '#c9a24f';
+    ctx.fillRect(-6, -13, 12, 2.5);
+  } else if (p.kind === 'mat') {
+    // flat woven mat with goods on it: clearly floor dressing, never solid
+    ctx.fillStyle = '#7a5a2e';
+    ctx.beginPath(); ctx.ellipse(0, 0, 26, 12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8a6a35';
+    ctx.beginPath(); ctx.ellipse(0, 0, 22, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 16, 7, 0, 0, Math.PI * 2); ctx.stroke();
+    const cols = ['#ff7a2a', '#e33d2e', '#8fbf3f', '#d43d1a', '#e8a91c'];
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = cols[i % cols.length];
+      ctx.beginPath(); ctx.arc(-12 + i * 5, -3 + (i % 2) * 6, 3, 0, Math.PI * 2); ctx.fill();
+    }
   } else if (p.kind === 'sack') {
     ctx.fillStyle = '#a88f68';
     ctx.beginPath(); ctx.ellipse(0, 2, 11, 10, 0, 0, Math.PI * 2); ctx.fill();
@@ -314,7 +414,8 @@ function drawObstacle(ctx, o, time) {
     ctx.lineTo(o.x + o.w - 6, o.y + 10);
     ctx.stroke();
   } else if (o.type === 'wall') {
-    // Low stone wall: grey-blue bricks in offset courses, pale cap.
+    // Low stone wall: grey-blue bricks in offset courses, a lit cap on
+    // top and a shadow falling at its foot, so it reads as tall.
     ctx.fillStyle = '#3a4358';
     ctx.fillRect(o.x, o.y, o.w, o.h);
     ctx.strokeStyle = 'rgba(0,0,0,0.55)';
@@ -328,10 +429,16 @@ function drawObstacle(ctx, o, time) {
         ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx, Math.min(yy + o.h / rows, o.y + o.h)); ctx.stroke();
       }
     }
-    ctx.fillStyle = '#5a6a8a';
-    ctx.fillRect(o.x, o.y, o.w, 5);
-    ctx.fillStyle = 'rgba(255,230,180,0.10)';
-    ctx.fillRect(o.x, o.y + 5, o.w, 4);
+    ctx.fillStyle = '#6a7a9a';
+    ctx.fillRect(o.x, o.y, o.w, 6);
+    ctx.fillStyle = 'rgba(255,230,180,0.22)';
+    ctx.fillRect(o.x, o.y + 6, o.w, 3);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(o.x, o.y + o.h - 6, o.w, 6);
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.beginPath();
+    ctx.ellipse(o.x + o.w / 2, o.y + o.h + 3, o.w / 2, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
   } else if (o.type === 'fence') {
     // Rope barrier: two posts + two sagging ropes.
     const horizontal = o.w >= o.h;
@@ -480,17 +587,6 @@ export function drawScene(ctx, game, time) {
     }
   }
 
-  // --- warm light pools under unhacked lanterns ---
-  for (const l of level.lanterns) {
-    if (l.hacked) continue;
-    const flick = 0.75 + 0.25 * Math.sin(time * 3 + l.x);
-    const g = ctx.createRadialGradient(l.x, l.y, 8, l.x, l.y, 130);
-    g.addColorStop(0, `rgba(255,179,71,${0.34 * flick})`);
-    g.addColorStop(1, 'rgba(255,179,71,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(l.x, l.y, 130, 0, Math.PI * 2); ctx.fill();
-  }
-
   // --- shoppers + cats (pure atmosphere: never solid, never seen) ---
   for (const npc of decor.npcs) {
     const pos = npcPos(npc, time);
@@ -516,39 +612,20 @@ export function drawScene(ctx, game, time) {
     ctx.beginPath(); ctx.moveTo(cat.x - 8, cat.y + 2); ctx.quadraticCurveTo(cat.x - 14, cat.y - 4, cat.x - 12 + tail, cat.y - 9); ctx.stroke();
   }
 
-  // --- vision cones (cover-blocked: raycast polygon), gradient-filled ---
-  for (const guard of game.guards) {
-    const poly = conePolygon(guard, game.solids);
-    const alarmed = guard.mode === 'chase';
-    const grad = ctx.createRadialGradient(guard.x, guard.y, 10, guard.x, guard.y, guard.range);
-    if (guard.elite) {
-      grad.addColorStop(0, alarmed ? 'rgba(255,60,60,0.42)' : 'rgba(255,120,60,0.32)');
-      grad.addColorStop(1, alarmed ? 'rgba(255,60,60,0.10)' : 'rgba(255,120,60,0.05)');
-    } else {
-      grad.addColorStop(0, alarmed ? 'rgba(255,70,40,0.40)' : 'rgba(255,150,40,0.28)');
-      grad.addColorStop(1, alarmed ? 'rgba(255,70,40,0.08)' : 'rgba(255,150,40,0.04)');
-    }
-    ctx.beginPath();
-    ctx.moveTo(poly[0].x, poly[0].y);
-    for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i].x, poly[i].y);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.strokeStyle = alarmed ? 'rgba(255,90,60,0.7)' : 'rgba(255,180,80,0.45)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // dashed range arc at the cone's far edge
-    ctx.setLineDash([4, 7]);
-    ctx.strokeStyle = alarmed ? 'rgba(255,90,60,0.35)' : 'rgba(255,180,80,0.25)';
-    ctx.beginPath();
-    ctx.arc(guard.x, guard.y, guard.range, guard.facing - guard.halfAngle, guard.facing + guard.halfAngle);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
   // --- stalls: wooden counter, striped awning, goods piled high ---
   level.stalls.forEach((s, i) => {
     const goods = goodsFor(i);
+    // soft ground shadow so the stall sits ON the floor, not in it
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(s.x + s.w / 2, s.y + s.h + 3, s.w / 2 + 4, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // warm light spilling from inside the stall
+    const sg = ctx.createRadialGradient(s.x + s.w / 2, s.y + s.h * 0.55, 6, s.x + s.w / 2, s.y + s.h * 0.55, s.w * 0.75);
+    sg.addColorStop(0, 'rgba(255,175,80,0.20)');
+    sg.addColorStop(1, 'rgba(255,175,80,0)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(s.x - 12, s.y - 6, s.w + 24, s.h + 18);
     // counter body: planks
     ctx.fillStyle = '#2a1f14';
     ctx.fillRect(s.x, s.y, s.w, s.h);
@@ -608,14 +685,10 @@ export function drawScene(ctx, game, time) {
     ctx.restore();
   }
 
-  // --- wall torches with flickering flames ---
+  // --- wall torches: flickering flames (their light comes from the
+  // lighting pass below, so no radial gradient is drawn here) ---
   for (const t of decor.torches) {
     const flick = 0.8 + 0.2 * Math.sin(time * 7 + t.y);
-    const g = ctx.createRadialGradient(t.x, t.y, 4, t.x, t.y, 70);
-    g.addColorStop(0, `rgba(255,170,60,${0.30 * flick})`);
-    g.addColorStop(1, 'rgba(255,170,60,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(t.x, t.y, 70, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#5a3a1a';
     ctx.fillRect(t.x - 3, t.y - 2, 6, 12);
     const fh = 10 + 3 * Math.sin(time * 9 + t.y * 0.3);
@@ -625,6 +698,24 @@ export function drawScene(ctx, game, time) {
     ctx.quadraticCurveTo(t.x + 5, t.y - 4, t.x, t.y - 2);
     ctx.quadraticCurveTo(t.x - 5, t.y - 4, t.x, t.y - 4 - fh);
     ctx.fill();
+  }
+
+  // --- hanging lanterns along the bottom wall: small, dim wall dressing ---
+  for (const hl of decor.hangLanterns || []) {
+    const flick = 0.85 + 0.15 * Math.sin(time * 4 + hl.phase);
+    ctx.strokeStyle = '#4a3220';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(hl.x, 884); ctx.lineTo(hl.x, hl.y - 8); ctx.stroke();
+    const hg = ctx.createRadialGradient(hl.x, hl.y, 2, hl.x, hl.y, 26);
+    hg.addColorStop(0, `rgba(255,190,90,${0.35 * flick})`);
+    hg.addColorStop(1, 'rgba(255,190,90,0)');
+    ctx.fillStyle = hg;
+    ctx.beginPath(); ctx.arc(hl.x, hl.y, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `rgba(255,200,110,${0.9 * flick})`;
+    ctx.beginPath(); ctx.ellipse(hl.x, hl.y, 6, 7.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#a86a1a';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(hl.x, hl.y, 6, 7.5, 0, 0, Math.PI * 2); ctx.stroke();
   }
 
   // --- exit gate: stone arch + portcullis ---
@@ -707,6 +798,102 @@ export function drawScene(ctx, game, time) {
     }
   }
 
+  // --- LIGHTING PASS: the market falls into night, and warm lamp pools
+  // cut holes in the dark. A separate light canvas is filled dark, then
+  // radial holes are punched out at every light source (lanterns,
+  // torches, hanging lanterns, the open exit, the thief's own glint),
+  // so unlit floor goes deep and lit floor glows — depth through light,
+  // like the top-ranked entries. ---
+  if (!lightCanvas) {
+    lightCanvas = document.createElement('canvas');
+    lightCanvas.width = W; lightCanvas.height = H;
+  }
+  const lg = lightCanvas.getContext('2d');
+  lg.clearRect(0, 0, W, H);
+  lg.globalCompositeOperation = 'source-over';
+  lg.fillStyle = 'rgba(5,8,18,0.42)';
+  lg.fillRect(0, 0, W, H);
+  lg.globalCompositeOperation = 'destination-out';
+  const hole = (x, y, r, a) => {
+    const g = lg.createRadialGradient(x, y, 4, x, y, r);
+    g.addColorStop(0, `rgba(255,255,255,${a})`);
+    g.addColorStop(0.6, `rgba(255,255,255,${a * 0.55})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    lg.fillStyle = g;
+    lg.beginPath(); lg.arc(x, y, r, 0, Math.PI * 2); lg.fill();
+  };
+  for (const l of level.lanterns) {
+    if (l.hacked) continue;
+    const flick = 0.8 + 0.2 * Math.sin(time * 3 + l.x);
+    hole(l.x, l.y, 230, 0.9 * flick);
+  }
+  for (const t of decor.torches) hole(t.x, t.y, 130, 0.7);
+  for (const hl of decor.hangLanterns || []) hole(hl.x, hl.y, 60, 0.5);
+  if (exitOpen) hole(level.exit.x + level.exit.w / 2, level.exit.y + level.exit.h / 2, 130, 0.6);
+  hole(player.x, player.y, 110, 0.5);
+  lg.globalCompositeOperation = 'source-over';
+  ctx.drawImage(lightCanvas, 0, 0);
+  // warm tint inside the pools so the light feels golden, not just less dark
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const l of level.lanterns) {
+    if (l.hacked) continue;
+    const flick = 0.8 + 0.2 * Math.sin(time * 3 + l.x);
+    const wg = ctx.createRadialGradient(l.x, l.y, 8, l.x, l.y, 200);
+    wg.addColorStop(0, `rgba(255,175,80,${0.10 * flick})`);
+    wg.addColorStop(1, 'rgba(255,175,80,0)');
+    ctx.fillStyle = wg;
+    ctx.beginPath(); ctx.arc(l.x, l.y, 200, 0, Math.PI * 2); ctx.fill();
+  }
+  for (const t of decor.torches) {
+    const wg = ctx.createRadialGradient(t.x, t.y, 4, t.x, t.y, 110);
+    wg.addColorStop(0, 'rgba(255,170,60,0.08)');
+    wg.addColorStop(1, 'rgba(255,170,60,0)');
+    ctx.fillStyle = wg;
+    ctx.beginPath(); ctx.arc(t.x, t.y, 110, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  // --- vision cones (cover-blocked: raycast polygon), soft gradient
+  // fill with a glowing edge, drawn OVER the dark so they read as light ---
+  for (const guard of game.guards) {
+    const poly = conePolygon(guard, game.solids);
+    const alarmed = guard.mode === 'chase';
+    const grad = ctx.createRadialGradient(guard.x, guard.y, 10, guard.x, guard.y, guard.range);
+    if (guard.elite) {
+      grad.addColorStop(0, alarmed ? 'rgba(255,60,60,0.55)' : 'rgba(255,120,60,0.45)');
+      grad.addColorStop(1, alarmed ? 'rgba(255,60,60,0.12)' : 'rgba(255,120,60,0.06)');
+    } else {
+      grad.addColorStop(0, alarmed ? 'rgba(255,70,40,0.52)' : 'rgba(255,155,45,0.42)');
+      grad.addColorStop(1, alarmed ? 'rgba(255,70,40,0.10)' : 'rgba(255,155,45,0.05)');
+    }
+    ctx.beginPath();
+    ctx.moveTo(poly[0].x, poly[0].y);
+    for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i].x, poly[i].y);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    // glowing edge: a soft outer stroke + a bright inner line
+    ctx.save();
+    ctx.shadowColor = alarmed ? 'rgba(255,80,50,0.9)' : 'rgba(255,190,90,0.9)';
+    ctx.shadowBlur = 14;
+    ctx.strokeStyle = alarmed ? 'rgba(255,110,70,0.85)' : 'rgba(255,200,120,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = alarmed ? 'rgba(255,90,60,0.18)' : 'rgba(255,180,80,0.18)';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    // dashed range arc at the cone's far edge
+    ctx.setLineDash([4, 7]);
+    ctx.strokeStyle = alarmed ? 'rgba(255,90,60,0.35)' : 'rgba(255,180,80,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(guard.x, guard.y, guard.range, guard.facing - guard.halfAngle, guard.facing + guard.halfAngle);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   // --- decoys ---
   for (const d of game.decoys) {
     ctx.fillStyle = '#ffd24d';
@@ -720,8 +907,18 @@ export function drawScene(ctx, game, time) {
     ctx.fillText('DECOY', d.x, d.y - 14);
   }
 
-  // --- wardens: robed, helmeted, torch in hand ---
+  // --- wardens: robed, helmeted, torch in hand — ringed + glowing so
+  // they pop against the dark floor, like the top-ranked entries ---
   for (const guard of game.guards) {
+    // warm halo + a hard ring around the warden: always readable
+    const hg = ctx.createRadialGradient(guard.x, guard.y, 4, guard.x, guard.y, 36);
+    hg.addColorStop(0, guard.elite ? 'rgba(255,70,40,0.30)' : 'rgba(255,150,50,0.28)');
+    hg.addColorStop(1, 'rgba(255,150,50,0)');
+    ctx.fillStyle = hg;
+    ctx.beginPath(); ctx.arc(guard.x, guard.y, 36, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = guard.elite ? 'rgba(255,60,40,0.9)' : 'rgba(255,170,70,0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(guard.x, guard.y, 20, 0, Math.PI * 2); ctx.stroke();
     // torch glow in hand
     const flick = 0.8 + 0.2 * Math.sin(time * 8 + guard.x);
     const tg = ctx.createRadialGradient(guard.x, guard.y, 2, guard.x, guard.y, 30);
@@ -761,16 +958,34 @@ export function drawScene(ctx, game, time) {
     }
     const mark = guard.mode === 'chase' ? '!' : guard.mode === 'investigate' ? '?' : null;
     if (mark) {
+      // big alert bubble with a white rim — readable at a glance
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.beginPath(); ctx.arc(guard.x + 2, guard.y - 32, 16, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = mark === '!' ? '#ff3b30' : '#ffd24d';
-      ctx.beginPath(); ctx.arc(guard.x, guard.y - 28, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(guard.x, guard.y - 34, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(guard.x, guard.y - 34, 16, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = '#1a0e00';
-      ctx.font = 'bold 15px monospace';
+      ctx.font = 'bold 20px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(mark, guard.x, guard.y - 23);
+      ctx.fillText(mark, guard.x, guard.y - 27);
     }
   }
 
-  // --- the thief: hooded, belt lantern glinting ---
+  // --- the thief: hooded, belt lantern glinting — teal ring + glow ---
+  ctx.save();
+  ctx.shadowColor = 'rgba(53,208,197,0.9)';
+  ctx.shadowBlur = 16;
+  ctx.strokeStyle = '#35d0c5';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(player.x, player.y, 19, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  const thg = ctx.createRadialGradient(player.x, player.y, 4, player.x, player.y, 40);
+  thg.addColorStop(0, 'rgba(53,208,197,0.30)');
+  thg.addColorStop(1, 'rgba(53,208,197,0)');
+  ctx.fillStyle = thg;
+  ctx.beginPath(); ctx.arc(player.x, player.y, 40, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = 'rgba(53,208,197,0.25)';
   ctx.beginPath(); ctx.arc(player.x, player.y, 17, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#1f8f86';
@@ -797,8 +1012,47 @@ export function drawScene(ctx, game, time) {
   if (player.sneaking) {
     ctx.strokeStyle = 'rgba(53,208,197,0.7)';
     ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.arc(player.x, player.y, 19, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(player.x, player.y, 24, 0, Math.PI * 2); ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  // --- annotation callouts, top-rank style: HIDDEN over a thief in
+  // shadow, WHAT WAS THAT? beside an investigating warden ---
+  const inShadow = level.shadows.some((s) => player.x >= s.x && player.x <= s.x + s.w && player.y >= s.y && player.y <= s.y + s.h);
+  if (inShadow && game.screen === 'play') {
+    const label = 'HIDDEN';
+    ctx.font = 'bold 12px monospace';
+    const lw = ctx.measureText(label).width + 18;
+    const lx = Math.max(70, Math.min(W - 70 - lw, player.x - lw / 2));
+    const ly = player.y - 52;
+    ctx.fillStyle = 'rgba(6,20,20,0.88)';
+    roundRect(ctx, lx, ly, lw, 20, 5); ctx.fill();
+    ctx.strokeStyle = 'rgba(53,208,197,0.9)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, lx, ly, lw, 20, 5); ctx.stroke();
+    ctx.fillStyle = '#35d0c5';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, lx + lw / 2, ly + 14);
+    ctx.strokeStyle = 'rgba(53,208,197,0.7)';
+    ctx.beginPath(); ctx.moveTo(player.x, ly + 20); ctx.lineTo(player.x, player.y - 22); ctx.stroke();
+  }
+  for (const guard of game.guards) {
+    if (guard.mode !== 'investigate') continue;
+    const label = 'WHAT WAS THAT?';
+    ctx.font = 'bold 12px monospace';
+    const lw = ctx.measureText(label).width + 18;
+    const lx = Math.max(90, Math.min(W - 90 - lw, guard.x - lw - 40));
+    const ly = Math.max(60, guard.y - 92);
+    ctx.fillStyle = 'rgba(20,14,4,0.88)';
+    roundRect(ctx, lx, ly, lw, 20, 5); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,210,77,0.9)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, lx, ly, lw, 20, 5); ctx.stroke();
+    ctx.fillStyle = '#ffd24d';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, lx + lw / 2, ly + 14);
+    ctx.strokeStyle = 'rgba(255,210,77,0.7)';
+    ctx.beginPath(); ctx.moveTo(lx + lw - 6, ly + 18); ctx.lineTo(guard.x, guard.y - 50); ctx.stroke();
   }
 
   // --- footstep rings ---
@@ -851,6 +1105,10 @@ function drawHud(ctx, game, time) {
   const hacked = level.lanterns.filter((l) => l.hacked).length;
   const exitOpen = hacked === level.lanterns.length;
   const b = band(game.detection);
+
+  // keep the right-side FIELD NOTES panel in sync (DOM, cheap: only
+  // touches the DOM when a value actually changes)
+  updateSidePanel(game);
 
   // top bar with a gold rule
   ctx.fillStyle = 'rgba(6,10,20,0.94)';
@@ -914,6 +1172,54 @@ function drawHud(ctx, game, time) {
   ctx.fillStyle = '#9fd8ff';
   ctx.font = '12px monospace';
   ctx.fillText(`TIME ${game.clockText}   ·   LEVEL ${game.levelIndex + 1}/3`, W - 14, H - 5);
+}
+
+// --- the right-side FIELD NOTES panel: cached DOM refs + last values,
+// so the canvas HUD can update it without touching the DOM every frame ---
+let panelEls = null;
+const panelLast = {};
+
+function updateSidePanel(game) {
+  if (typeof document === 'undefined') return;
+  if (!panelEls) {
+    const get = (id) => document.getElementById(id);
+    panelEls = {
+      detect: get('sp-detect'), alarm: get('sp-alarm'), vis: get('sp-vis'),
+      noise: get('sp-noise'), lanterns: get('sp-lanterns'), spotted: get('sp-spotted'),
+      stealth: get('sp-stealth'), time: get('sp-time'), goal: get('sp-goal'),
+      status: get('sp-status'),
+    };
+    if (!panelEls.detect) return;
+  }
+  const level = game.level;
+  const player = game.player;
+  const b = band(game.detection);
+  const detectText = b === 3 ? 'CAUGHT' : b === 2 ? '! ALARMED' : b === 1 ? '? SUSPICIOUS' : 'UNSEEN';
+  const detectCls = b >= 2 ? 'bad' : b === 1 ? 'warn' : 'ok';
+  const inShadow = level.shadows.some((s) => player.x >= s.x && player.x <= s.x + s.w && player.y >= s.y && player.y <= s.y + s.h);
+  const values = {
+    detect: detectText,
+    alarm: b >= 2 ? 'LOUD' : b === 1 ? 'RISING' : 'QUIET',
+    vis: inShadow ? 'IN SHADOW' : 'LIT',
+    noise: player.sneaking ? 'SILENT' : player.moving ? 'HEARD' : 'SILENT',
+    lanterns: `${level.lanterns.filter((l) => l.hacked).length}/${level.lanterns.length}`,
+    spotted: String(game.timesSpotted),
+    stealth: `${Math.round(game.stealthPct)}%`,
+    time: game.clockText,
+    goal: game.exitOpen ? 'ALL LANTERNS HACKED — REACH THE GATE' : 'Hack every lantern, then reach the gate unseen.',
+    status: game.statusLine,
+  };
+  if (panelLast.detect !== detectText) {
+    panelEls.detect.textContent = detectText;
+    panelEls.detect.className = `p-detect ${detectCls}`;
+    panelLast.detect = detectText;
+  }
+  for (const k of ['alarm', 'vis', 'noise', 'lanterns', 'spotted', 'stealth', 'time', 'goal', 'status']) {
+    if (panelLast[k] !== values[k]) {
+      panelEls[k].textContent = values[k];
+      panelLast[k] = values[k];
+    }
+  }
 }
 
 export function drawOverlay(ctx, game) {

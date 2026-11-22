@@ -71,19 +71,19 @@ export function decorFor(levelIndex, level) {
     }
   }
 
-  // --- rugs in open floor ---
+  // --- rugs in open floor: many, so the streets read as a lived-in bazaar ---
   const rugs = [];
   const rugCols = [
     ['#7a2e35', '#c98a2e', '#2e5d6b'],
     ['#2e5d3a', '#c98a2e', '#7a2e35'],
     ['#4a2e6b', '#c9a22e', '#2e7d6b'],
   ];
-  for (let i = 0; i < 3; i++) {
-    for (let tries = 0; tries < 40; tries++) {
+  for (let i = 0; i < 8; i++) {
+    for (let tries = 0; tries < 60; tries++) {
       const x = 60 + rnd() * (PLAY_W - 250);
       const y = 60 + rnd() * (PLAY_H - 180);
-      const w = 110 + rnd() * 60;
-      const h = 62 + rnd() * 26;
+      const w = 95 + rnd() * 55;
+      const h = 52 + rnd() * 22;
       if (clearOf(x + w / 2, y + h / 2, Math.max(w, h) / 2, level)) {
         rugs.push({ x, y, w, h, cols: rugCols[i % rugCols.length], rot: (rnd() - 0.5) * 0.12 });
         break;
@@ -93,23 +93,26 @@ export function decorFor(levelIndex, level) {
 
   // --- puddles (rain-slick market floor, lantern light shimmers in them) ---
   const puddles = [];
-  for (let i = 0; i < 2; i++) {
-    for (let tries = 0; tries < 40; tries++) {
+  for (let i = 0; i < 4; i++) {
+    for (let tries = 0; tries < 60; tries++) {
       const x = 80 + rnd() * (PLAY_W - 260);
       const y = 80 + rnd() * (PLAY_H - 200);
       if (clearOf(x, y, 52, level)) { puddles.push({ x, y, rx: 46 + rnd() * 22, ry: 15 + rnd() * 8 }); break; }
     }
   }
 
-  // --- props: crates, barrels, baskets, sacks, carts — never on a path ---
-  const kinds = ['crate', 'barrel', 'basket', 'sack', 'crate', 'barrel', 'basket', 'cart'];
+  // --- props: crates, barrels, baskets, sacks, carts, plants, grass,
+  // vases, flat goods-mats — dense, like a real bazaar. Purely visual:
+  // guards walk through them, detection ignores them, nothing here is
+  // solid, so no path or sightline can ever break. ---
+  const kinds = ['crate', 'barrel', 'basket', 'sack', 'crate', 'barrel', 'basket', 'cart', 'plant', 'grass', 'vase', 'mat', 'plant', 'grass', 'basket', 'sack'];
   const props = [];
-  for (let i = 0; i < 26; i++) {
-    for (let tries = 0; tries < 30; tries++) {
+  for (let i = 0; i < 64; i++) {
+    for (let tries = 0; tries < 80; tries++) {
       const x = 40 + rnd() * (PLAY_W - 80);
       const y = 40 + rnd() * (PLAY_H - 80);
       const kind = kinds[i % kinds.length];
-      const r = kind === 'cart' ? 46 : 22;
+      const r = kind === 'cart' ? 46 : kind === 'mat' ? 30 : (kind === 'plant' || kind === 'grass' || kind === 'vase') ? 16 : 22;
       if (clearOf(x, y, r, level)) {
         props.push({ kind, x, y, s: 0.85 + rnd() * 0.4, rot: (rnd() - 0.5) * 0.5, v: rnd() });
         break;
@@ -117,23 +120,30 @@ export function decorFor(levelIndex, level) {
     }
   }
 
-  // --- hanging banners from the top wall ---
+  // --- hanging banners from the top wall: a row of them, wall to wall ---
   const banners = [];
   const bannerHues = ['#a33327', '#2e6b7d', '#7a4a8a', '#b4552d', '#2e7d6b'];
+  for (let i = 0; i < 7; i++) {
+    banners.push({ x: 140 + i * ((PLAY_W - 280) / 6) + rnd() * 50, hue: bannerHues[i % bannerHues.length], len: 52 + rnd() * 22 });
+  }
+
+  // --- hanging lanterns along the bottom wall: small, dim, clearly wall
+  // dressing — no post, no HACK label, never mistaken for an objective ---
+  const hangLanterns = [];
   for (let i = 0; i < 4; i++) {
-    banners.push({ x: 180 + i * ((PLAY_W - 360) / 3) + rnd() * 60, hue: bannerHues[i % bannerHues.length], len: 52 + rnd() * 22 });
+    hangLanterns.push({ x: 380 + i * 360 + rnd() * 40, y: 852, phase: rnd() * 9 });
   }
 
   // --- wall torches (left + right walls) ---
   const torches = [
-    { x: 16, y: 180, side: 1 }, { x: 16, y: 680, side: 1 },
-    { x: PLAY_W - 16, y: 300, side: -1 }, { x: PLAY_W - 16, y: 720, side: -1 },
+    { x: 16, y: 180, side: 1 }, { x: 16, y: 450, side: 1 }, { x: 16, y: 680, side: 1 },
+    { x: PLAY_W - 16, y: 120, side: -1 }, { x: PLAY_W - 16, y: 300, side: -1 }, { x: PLAY_W - 16, y: 720, side: -1 },
   ];
 
   // --- shoppers: small cloaked figures wandering slow loops in open lanes ---
   const npcs = [];
-  const npcHues = ['#8a6d4a', '#6b7d8a', '#7d5a6e', '#5a7d4a', '#9a7a3a', '#6b5a8a'];
-  for (let i = 0; i < 5; i++) {
+  const npcHues = ['#8a6d4a', '#6b7d8a', '#7d5a6e', '#5a7d4a', '#9a7a3a', '#6b5a8a', '#a87d4a', '#4a7d8a', '#8a4a5a'];
+  for (let i = 0; i < 9; i++) {
     const loop = [];
     for (let tries = 0; tries < 60 && loop.length < 4; tries++) {
       const x = 70 + rnd() * (PLAY_W - 140);
@@ -147,7 +157,7 @@ export function decorFor(levelIndex, level) {
 
   // --- cats dozing by stalls ---
   const cats = [];
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 4; i++) {
     for (let tries = 0; tries < 40; tries++) {
       const s = level.stalls[Math.floor(rnd() * level.stalls.length)];
       const x = s.x + s.w / 2 + (rnd() - 0.5) * (s.w + 60);
@@ -158,7 +168,7 @@ export function decorFor(levelIndex, level) {
 
   // --- dust motes + fireflies in the shadow zones ---
   const dust = [];
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < 110; i++) {
     dust.push({ x: 20 + rnd() * (PLAY_W - 40), y: 20 + rnd() * (PLAY_H - 40), r: 0.8 + rnd() * 1.6, phase: rnd() * 12, drift: 3 + rnd() * 7 });
   }
   const fireflies = [];
@@ -177,7 +187,7 @@ export function decorFor(levelIndex, level) {
     }
   });
 
-  const decor = { stones, rugs, puddles, props, banners, torches, npcs, cats, dust, fireflies, smoke };
+  const decor = { stones, rugs, puddles, props, banners, hangLanterns, torches, npcs, cats, dust, fireflies, smoke };
   decorCache.set(levelIndex, decor);
   return decor;
 }

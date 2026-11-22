@@ -64,6 +64,13 @@ export function applyShot(game, name) {
     game.totalClockText = '03:41';
     game.totalStealthPct = 87;
     game.timesSpotted = 2;
+    // keep the live FIELD NOTES panel coherent with the win overlay:
+    // this level's lantern hacked, clock + stealth matching the totals
+    game.level.lanterns.forEach((l) => { l.hacked = true; });
+    game.elapsed = 221;
+    game.clockText = '03:41';
+    game.stealthPct = 87;
+    game.detection = 0;
     game.screen = 'win';
   }
 }
